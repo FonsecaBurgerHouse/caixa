@@ -309,7 +309,7 @@ function load(){
     return {history:Array.isArray(parsed.history)?parsed.history:[],days:parsed.days||{}};
   }catch(e){ return defaultState(); }
 }
-function save(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+function save(){ try { localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); } catch(e) { console.warn("Não foi possível salvar no armazenamento local:", e); } }
 function getToday(){
   const key=todayKey();
   if(!state.days[key]) state.days[key]={date:key,status:"open",sales:[],expenses:[],openedAt:new Date().toISOString()};
@@ -319,9 +319,12 @@ function renderProducts(){
   [["burgers",PRODUCTS.burgers],["combos",PRODUCTS.combos],["extras",PRODUCTS.extras]].forEach(([id,list])=>{
     const el=document.getElementById(id);
     el.innerHTML=list.map(([name,price])=>`
-      <button class="product" onclick="addSale(${JSON.stringify(name)},${price})">
+      <button type="button" class="product" data-product-name="${escapeHtml(name)}" data-product-price="${price}">
         <span class="name">${escapeHtml(name)}</span><span class="price">${money(price)}</span>
       </button>`).join("");
+  });
+  document.querySelectorAll(".product").forEach(btn=>{
+    btn.addEventListener("click",()=>addSale(btn.dataset.productName,Number(btn.dataset.productPrice)));
   });
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
